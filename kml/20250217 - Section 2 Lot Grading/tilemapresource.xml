@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
     <TileMap version="1.0.0" tilemapservice="http://tms.osgeo.org/1.0.0">
-      <Title>tmp.sCcUNFGqbC.tif</Title>
+      <Title>reprojected.NEFH8x.tif</Title>
       <Abstract></Abstract>
       <SRS>EPSG:4326</SRS>
       <BoundingBox minx="-97.55504400440009" miny="26.04893821363430" maxx="-97.54984091276047" maxy="26.05763558807864"/>

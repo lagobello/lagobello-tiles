@@ -1,47 +1,52 @@
 ###############################################
 # build_latest_orthophoto.sh
-# Pick the newest flight folder (YYYYMMDD prefix) and tile its GeoTIFF.
-# Usage: ./build_latest_orthophoto.sh  [flights-dir] [dest-root]
+# Detect newest flight directory (YYYYMMDD‑prefixed), locate its GeoTIFF,
+# call convert_tif_to_kml.sh to build Google‑Earth tiles, then copy
+# doc.kml → latest_doc.kml.
 ###############################################
 #!/usr/bin/env bash
-# re-exec with bash if started by sh/ash/dash
 [ -z "$BASH_VERSION" ] && exec /usr/bin/env bash "$0" "$@"
 set -euo pipefail
+shopt -s nullglob   # empty globs expand to nothing
 
-# ---- Default paths for *current* WSL mount ----
+# -------- Paths --------
 FLIGHTS_DIR="${1:-/mnt/c/Users/vitto/Dropbox/Projects/lagobello-orthophoto/flights}"
 DEST_ROOT="${2:-/mnt/c/Users/vitto/Code/lagobello-tiles/kml}"
 CONVERTER_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/convert_tif_to_kml.sh"
 
+# Guard against missing converter or self‑recursion
+if [[ "$CONVERTER_SCRIPT" == "$0" ]]; then
+  echo "ERROR: CONVERTER_SCRIPT resolves to this build script. Check filename/path." >&2
+  exit 1
+fi
+[[ -f "$CONVERTER_SCRIPT" && -x "$CONVERTER_SCRIPT" ]] || { echo "ERROR: Converter script $CONVERTER_SCRIPT not found or not executable" >&2; exit 1; }
+
+# -------- Find latest flight --------
 printf '[build_latest_orthophoto] Scanning flights in %s …\n' "$FLIGHTS_DIR"
-LATEST_FLIGHT_NAME=""
-for dir in "$FLIGHTS_DIR"/*/; do
-  [ -d "$dir" ] || continue
-  name="$(basename "$dir")"
-  [[ $name =~ ^[0-9]{8}\  ]] || continue
-  [[ -z "$LATEST_FLIGHT_NAME" || "$name" > "$LATEST_FLIGHT_NAME" ]] && LATEST_FLIGHT_NAME="$name"
+LATEST=""
+for d in "$FLIGHTS_DIR"/*/; do
+  base="$(basename "$d")"
+  [[ $base =~ ^[0-9]{8}\  ]] || continue  # require YYYYMMDD␠ prefix
+  [[ -z "$LATEST" || "$base" > "$LATEST" ]] && LATEST="$base"
 done
+[[ -n "$LATEST" ]] || { echo "No flight directory found" >&2; exit 1; }
+SRC_DIR="$FLIGHTS_DIR/$LATEST"
+printf '[build_latest_orthophoto] Latest flight → %s\n' "$LATEST"
 
-[[ -n "$LATEST_FLIGHT_NAME" ]] || { echo "No flight directories with YYYYMMDD prefix found in $FLIGHTS_DIR" >&2; exit 1; }
-
-SRC_DIR="$FLIGHTS_DIR/$LATEST_FLIGHT_NAME"
-printf '[build_latest_orthophoto] Latest flight → %s\n' "$LATEST_FLIGHT_NAME"
-
-# ---- locate GeoTIFF (prefer odm/*.tif) ----
+# -------- Locate GeoTIFF --------
 SRC_TIF=""
-if [ -d "$SRC_DIR/odm" ]; then
-  for tif in "$SRC_DIR"/odm/*.tif; do [ -e "$tif" ] && { SRC_TIF="$tif"; break; } done
+if [[ -d "$SRC_DIR/odm" ]]; then
+  for f in "$SRC_DIR"/odm/*.tif; do SRC_TIF="$f"; break; done
 fi
 if [[ -z "$SRC_TIF" ]]; then
-  for tif in "$SRC_DIR"/*.tif; do [ -e "$tif" ] && { SRC_TIF="$tif"; break; } done
+  for f in "$SRC_DIR"/*.tif; do SRC_TIF="$f"; break; done
 fi
 [[ -n "$SRC_TIF" ]] || { echo "No .tif found in $SRC_DIR" >&2; exit 1; }
+printf '[build_latest_orthophoto] Found GeoTIFF → %s\n' "$SRC_TIF"
 
-# ---- convert ----
-DEST_DIR="$DEST_ROOT/$LATEST_FLIGHT_NAME"
-"$CONVERTER_SCRIPT" "$SRC_TIF" "$DEST_DIR" || { echo '[build_latest_orthophoto] 🚫  Conversion failed.' >&2; exit 1; }
+# -------- Convert --------
+printf '[build_latest_orthophoto] Using converter → %s
+' "$CONVERTER_SCRIPT"
+DEST_DIR="$DEST_ROOT/$LATEST"
 
-# ---- symlink helper ----
-ln -sfn "$DEST_DIR/doc.kml" "$DEST_ROOT/latest_doc.kml"
-
-echo '[build_latest_orthophoto] ✅  Finished. Tiles live at' "$DEST_DIR"
+"$CONVERTER_SCRIPT" "$SRC_TIF" "$DEST_DIR" || { echo "ERROR: Converter exited with status $?" >&2; exit 1; }
