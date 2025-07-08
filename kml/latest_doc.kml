@@ -1,1 +1,33 @@
-/mnt/c/Users/vitto/Code/lagobello-tiles/kml/20250217 - Section 2 Lot Grading/doc.kml
+<?xml version="1.0" encoding="utf-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>reprojected.NEFH8x.tif</name>
+    <description></description>
+    <Style>
+      <ListStyle id="hideChildren">
+        <listItemType>checkHideChildren</listItemType>
+      </ListStyle>
+    </Style>
+    <NetworkLink>
+      <name>15/7504/10563.png</name>
+      <Region>
+        <LatLonAltBox>
+          <north>26.05957031250000</north>
+          <south>26.04858398437500</south>
+          <east>-97.54760742187500</east>
+          <west>-97.55859375000000</west>
+        </LatLonAltBox>
+        <Lod>
+          <minLodPixels>128</minLodPixels>
+          <maxLodPixels>-1</maxLodPixels>
+        </Lod>
+      </Region>
+      <Link>
+        <href>15/7504/10563.kml</href>
+        <viewRefreshMode>onRegion</viewRefreshMode>
+        <viewFormat/>
+      </Link>
+    </NetworkLink>
+              </Document>
+</kml>
+    
