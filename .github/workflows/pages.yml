@@ -1,0 +1,28 @@
+name: GitHub Pages
+on:
+  push:
+    branches: [ main ]       # or whatever branch triggers the publish
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 👉 if you generate tiles inside CI, do it here
+      # - run: ./scripts/build_latest_orthophoto_v2.sh
+
+      # --- key change: upload only the static folder, not repo root ---
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./              # point at the folder that actually goes live
+          retention-days: 1
+          if-no-files-found: error
+          tar-extra-args: --warning=no-file-changed   # suppress “file changed” warnings
+
+      - uses: actions/deploy-pages@v4
